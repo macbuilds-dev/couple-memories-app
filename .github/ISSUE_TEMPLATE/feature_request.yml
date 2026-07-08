@@ -1,0 +1,12 @@
+﻿name: Feature request
+description: Suggest an improvement for the couple app
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: Idea
+      description: What should we add and why?
+    validations:
+      required: true
