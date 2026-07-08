@@ -4,18 +4,24 @@ class MediaFile {
   final String path;
   final MediaType type;
   final String? thumbnailPath;
+  final String? cloudinaryPublicId;
 
   MediaFile({
     required this.path,
     required this.type,
     this.thumbnailPath,
+    this.cloudinaryPublicId,
   });
+
+  bool get isRemote =>
+      path.startsWith('http://') || path.startsWith('https://');
 
   Map<String, dynamic> toJson() {
     return {
       'path': path,
       'type': type.toString().split('.').last,
       'thumbnailPath': thumbnailPath,
+      'cloudinaryPublicId': cloudinaryPublicId,
     };
   }
 
@@ -27,6 +33,21 @@ class MediaFile {
         orElse: () => MediaType.image,
       ),
       thumbnailPath: json['thumbnailPath'] as String?,
+      cloudinaryPublicId: json['cloudinaryPublicId'] as String?,
+    );
+  }
+
+  MediaFile copyWith({
+    String? path,
+    MediaType? type,
+    String? thumbnailPath,
+    String? cloudinaryPublicId,
+  }) {
+    return MediaFile(
+      path: path ?? this.path,
+      type: type ?? this.type,
+      thumbnailPath: thumbnailPath ?? this.thumbnailPath,
+      cloudinaryPublicId: cloudinaryPublicId ?? this.cloudinaryPublicId,
     );
   }
 
