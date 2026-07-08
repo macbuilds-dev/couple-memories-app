@@ -303,6 +303,34 @@ class AppTheme {
         ],
       );
 
+  /// Dark surfaces for timeline, moments, preview sheet, and bottom nav.
+  static Color get darkSurfaceColor {
+    return Color.alphaBlend(
+      secondaryColor.withValues(alpha: 0.12),
+      textPrimary,
+    );
+  }
+
+  static Color get navBarColor => darkSurfaceColor;
+
+  static Color get navInactiveColor => Color.alphaBlend(
+        Colors.white.withValues(alpha: 0.45),
+        darkSurfaceColor,
+      );
+
+  /// Text on dark gradients / darkSurfaceColor (auth, onboarding, discover).
+  static const Color onDarkHeadline = Colors.white;
+
+  static Color get onDarkBody => Colors.white.withValues(alpha: 0.88);
+
+  static Color get onDarkCaption => Colors.white.withValues(alpha: 0.72);
+
+  static Color get onDarkMuted => Colors.white.withValues(alpha: 0.55);
+
+  static Color get onDarkBorder => Colors.white.withValues(alpha: 0.35);
+
+  static Color get onDarkDivider => Colors.white.withValues(alpha: 0.2);
+
   // Theme Data
   static ThemeData get themeData => ThemeData(
         primaryColor: primaryColor,
@@ -311,6 +339,12 @@ class AppTheme {
           primary: primaryColor,
           secondary: secondaryColor,
           surface: surfaceColor,
+        ),
+        dialogTheme: DialogThemeData(
+          backgroundColor: surfaceColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(radiusMedium),
+          ),
         ),
         textTheme: TextTheme(
           displayLarge: getTitleStyle(),
