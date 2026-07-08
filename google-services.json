@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "83467342479",
+    "project_id": "yaaram-80842",
+    "storage_bucket": "yaaram-80842.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:83467342479:android:474e5a9fc4381b15c016fa",
+        "android_client_info": {
+          "package_name": "com.yaaram.lovestory"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "83467342479-mifaflf0jntf2ssb6qqrkdd61ant91m2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.yaaram.lovestory",
+            "certificate_hash": "45e668b02d58b04ffe66c2c2eade8bde0ffe1d70"
+          }
+        },
+        {
+          "client_id": "83467342479-6mj8jnkep30luf77f6dcnjs2fr7nrqc0.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBd26r9-6yv-buuTMomWoJQ4Aat7TM5Azw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "83467342479-6mj8jnkep30luf77f6dcnjs2fr7nrqc0.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

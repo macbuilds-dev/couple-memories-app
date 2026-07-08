@@ -1,4 +1,4 @@
-package com.example.yaaram
+package com.yaaram.lovestory
 
 import io.flutter.embedding.android.FlutterActivity
 
