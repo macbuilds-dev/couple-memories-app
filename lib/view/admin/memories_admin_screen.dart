@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
+import 'package:yaaram/controller/memory_controller.dart';
 import '../../controller/utils/database_admin.dart';
 import '../../controller/utils/theme/app_theme.dart';
 import '../widgets/admin/admin_app_bar_widget.dart';
@@ -14,6 +16,7 @@ class MemoriesAdminScreen extends StatefulWidget {
 }
 
 class _MemoriesAdminScreenState extends State<MemoriesAdminScreen> {
+  final MemoryController _memoryController = Get.find<MemoryController>();
   List<Map<String, dynamic>>? _memories;
   List<Map<String, dynamic>>? _deletedMemories;
   bool _isLoading = false;
@@ -28,7 +31,7 @@ class _MemoriesAdminScreenState extends State<MemoriesAdminScreen> {
     setState(() => _isLoading = true);
     final allMemories = await DatabaseAdmin.getAllMemoriesRaw();
     final deletedMemories = await DatabaseAdmin.getDeletedMemoriesRaw();
-    
+
     setState(() {
       _memories = allMemories;
       _deletedMemories = deletedMemories;
@@ -36,29 +39,40 @@ class _MemoriesAdminScreenState extends State<MemoriesAdminScreen> {
     });
   }
 
+  Future<void> _restoreMemory(int id) async {
+    await _memoryController.restoreMemory(id);
+    await _loadMemories();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AdminAppBarWidget(title: 'Memories Admin'),
+      appBar: const AdminAppBarWidget(title: 'Manage Memories'),
       body: Container(
         decoration: BoxDecoration(
           gradient: AppTheme.backgroundGradient,
         ),
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : SingleChildScrollView(
-                padding: EdgeInsets.all(5.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    MemoriesPreviewWidget(memories: _memories),
-                    SizedBox(height: 3.h),
-                    DeletedMemoriesPreviewWidget(deletedMemories: _deletedMemories),
-                  ],
+            : RefreshIndicator(
+                onRefresh: _loadMemories,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: EdgeInsets.all(5.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      MemoriesPreviewWidget(memories: _memories),
+                      SizedBox(height: 3.h),
+                      DeletedMemoriesPreviewWidget(
+                        deletedMemories: _deletedMemories,
+                        onRestore: _restoreMemory,
+                      ),
+                    ],
+                  ),
                 ),
               ),
       ),
     );
   }
-
 }

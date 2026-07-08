@@ -5,6 +5,8 @@ import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:yaaram/controller/memory_controller.dart';
 import 'package:yaaram/model/memory_model/memory_model.dart';
 import 'package:intl/intl.dart';
+import 'package:yaaram/utils/navigation_helper.dart';
+import '../widgets/delete_memory_dialog.dart';
 import '../../controller/utils/theme/app_theme.dart';
 import '../widgets/memory_card_media.dart';
 import '../widgets/action_button_widget.dart';
@@ -565,12 +567,70 @@ class _MemoryDetailScreenState extends State<MemoryDetailScreen>
                   ),
                 ),
               ],
+              SizedBox(height: 3.h),
+              _buildActionButtons(mem),
               SizedBox(height: 2.h),
             ],
           ),
         ),
       );
     });
+  }
+
+  Widget _buildActionButtons(Memory memory) {
+    return Row(
+      children: [
+        Expanded(
+          child: OutlinedButton.icon(
+            onPressed: () => NavigationHelper.toAddMemory(memoryToEdit: memory),
+            icon: Icon(Icons.edit, size: 5.w, color: AppTheme.secondaryColor),
+            label: Text(
+              'Edit',
+              style: AppTheme.getBodyStyle(
+                fontSize: AppTheme.fontSizeMedium.sp,
+                color: AppTheme.secondaryColor,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              padding: EdgeInsets.symmetric(vertical: 1.5.h),
+              side: BorderSide(color: AppTheme.secondaryColor),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              ),
+            ),
+          ),
+        ),
+        SizedBox(width: 3.w),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () {
+              DeleteMemoryDialog.show(
+                memory: memory,
+                onConfirm: () {
+                  _memoryController.deleteMemory(memory.id);
+                  Get.back();
+                },
+              );
+            },
+            icon: Icon(Icons.delete_outline, size: 5.w, color: Colors.white),
+            label: Text(
+              'Delete',
+              style: AppTheme.getBodyStyle(
+                fontSize: AppTheme.fontSizeMedium.sp,
+                color: Colors.white,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+              padding: EdgeInsets.symmetric(vertical: 1.5.h),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
 }

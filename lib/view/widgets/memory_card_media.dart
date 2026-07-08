@@ -1,13 +1,13 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:video_player/video_player.dart';
 import 'package:yaaram/model/media_file_model/media_file_model.dart';
+import 'package:yaaram/utils/media_utils.dart';
 
 import '../../controller/utils/theme/app_theme.dart';
-import 'media_gallery_widget.dart';
+import '../../utils/navigation_helper.dart';
 
 class MemoryCardMedia extends StatefulWidget {
   final List<MediaFile> mediaFiles;
@@ -42,12 +42,9 @@ class _MemoryCardMediaState extends State<MemoryCardMedia> {
   }
 
   void _openFullScreen() {
-    Get.to(
-      () => MediaViewerScreen(
-        mediaFiles: widget.mediaFiles,
-        initialIndex: _currentPage,
-      ),
-      transition: Transition.fadeIn,
+    NavigationHelper.toMediaViewer(
+      mediaFiles: widget.mediaFiles,
+      initialIndex: _currentPage,
     );
   }
 
@@ -212,32 +209,32 @@ class _MemoryCardMediaState extends State<MemoryCardMedia> {
 
   Widget _buildMediaWidget(MediaFile media, int index) {
     if (media.isImage) {
-      return Image.file(
-        File(media.path),
+      return MediaUtils.buildImage(
+        path: media.path,
         fit: BoxFit.cover,
         width: double.infinity,
         height: double.infinity,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            color: Colors.grey[300],
-            child: Center(
-              child: Icon(
-                Icons.broken_image,
-                size: 10.w,
-                color: Colors.grey[600],
-              ),
-            ),
-          );
-        },
       );
-    } else {
-      return _buildVideoThumbnail(media.path);
     }
+    final thumb = MediaUtils.thumbnailSource(media);
+    if (thumb != null && media.isRemote) {
+      return Stack(
+        fit: StackFit.expand,
+        children: [
+          MediaUtils.buildImage(path: thumb, fit: BoxFit.cover),
+          Container(color: Colors.black.withOpacity(0.2)),
+          Center(
+            child: Icon(Icons.play_arrow, color: Colors.white, size: 10.w),
+          ),
+        ],
+      );
+    }
+    return _buildVideoThumbnail(media.path, isRemote: media.isRemote);
   }
 
-  Widget _buildVideoThumbnail(String videoPath) {
+  Widget _buildVideoThumbnail(String videoPath, {bool isRemote = false}) {
     return FutureBuilder<VideoPlayerController>(
-      future: _initializeVideoController(videoPath),
+      future: _initializeVideoController(videoPath, isRemote: isRemote),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done &&
             snapshot.hasData &&
@@ -279,9 +276,14 @@ class _MemoryCardMediaState extends State<MemoryCardMedia> {
     );
   }
 
-  Future<VideoPlayerController> _initializeVideoController(String path) async {
+  Future<VideoPlayerController> _initializeVideoController(
+    String path, {
+    bool isRemote = false,
+  }) async {
     try {
-      final controller = VideoPlayerController.file(File(path));
+      final controller = isRemote
+          ? VideoPlayerController.networkUrl(Uri.parse(path))
+          : VideoPlayerController.file(File(path));
       await controller.initialize().timeout(
         const Duration(seconds: 5),
         onTimeout: () {
@@ -296,8 +298,9 @@ class _MemoryCardMediaState extends State<MemoryCardMedia> {
       return controller;
     } catch (e) {
       print('Error initializing video thumbnail: $e');
-      // Return a dummy controller that won't be used
-      final dummyController = VideoPlayerController.file(File(path));
+      final dummyController = isRemote
+          ? VideoPlayerController.networkUrl(Uri.parse(path))
+          : VideoPlayerController.file(File(path));
       return dummyController;
     }
   }

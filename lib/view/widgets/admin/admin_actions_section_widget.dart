@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'dart:convert';
+import 'package:get/get.dart';
+import 'package:yaaram/controller/memory_controller.dart';
 import '../../../controller/utils/database_admin.dart';
 import 'admin_section_card_widget.dart';
 import 'admin_action_button_widget.dart';
@@ -59,6 +61,46 @@ class AdminActionsSectionWidget extends StatelessWidget {
             label: 'Show Database Path',
             icon: Icons.folder,
             onTap: () => DatabaseAdmin.showDatabasePath(),
+          ),
+          SizedBox(height: 1.h),
+          AdminActionButtonWidget(
+            label: 'Clear All Memories',
+            icon: Icons.delete_forever,
+            onTap: () {
+              Get.dialog(
+                AlertDialog(
+                  title: const Text('Clear All Memories'),
+                  content: const Text(
+                    'This will permanently delete all memories from the database. This cannot be undone.',
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Get.back(),
+                      child: const Text('Cancel'),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        Get.back();
+                        final cleared = await DatabaseAdmin.clearAllMemories();
+                        if (cleared) {
+                          await Get.find<MemoryController>().loadMemories();
+                          onRefresh?.call();
+                          Get.snackbar(
+                            'Cleared',
+                            'All memories have been removed',
+                            snackPosition: SnackPosition.BOTTOM,
+                          );
+                        }
+                      },
+                      child: const Text(
+                        'Clear All',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
           if (onRefresh != null) ...[
             SizedBox(height: 1.h),
