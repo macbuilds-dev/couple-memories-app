@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
+import '../../../controller/admin_session_controller.dart';
+import '../../../controller/auth_controller.dart';
 import '../../../controller/utils/theme/app_theme.dart';
 import '../../../controller/utils/settings/settings_controller.dart';
 import '../../../controller/utils/settings/app_settings.dart';
 import '../../../controller/utils/database_admin.dart';
+import '../../../routes/app_routes.dart';
+import '../../../utils/navigation_helper.dart';
 import 'admin_section_card_widget.dart';
 import 'database_info_widget.dart';
 
@@ -44,24 +48,23 @@ class _AdminSettingsListWidgetState extends State<AdminSettingsListWidget> {
         children: [
           _buildAppSettingsSection(),
           SizedBox(height: 2.h),
+          _buildToolsSection(),
+          SizedBox(height: 2.h),
           _buildDatabaseInfoSection(),
+          SizedBox(height: 2.h),
+          _buildLogoutSection(),
         ],
       ),
     );
   }
 
   Widget _buildAppSettingsSection() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withOpacity(0.1),
-            blurRadius: 10,
-          ),
-        ],
-      ),
+    return Material(
+      color: AppTheme.surfaceColor,
+      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      clipBehavior: Clip.antiAlias,
+      elevation: 2,
+      shadowColor: AppTheme.primaryColor.withValues(alpha: 0.1),
       child: Column(
         children: [
           ListTile(
@@ -118,6 +121,99 @@ class _AdminSettingsListWidgetState extends State<AdminSettingsListWidget> {
     );
   }
 
+  Widget _buildToolsSection() {
+    return Material(
+      color: AppTheme.surfaceColor,
+      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      clipBehavior: Clip.antiAlias,
+      elevation: 2,
+      shadowColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+      child: Column(
+        children: [
+          ListTile(
+            leading: Icon(Icons.build_circle_outlined, color: AppTheme.secondaryColor, size: 5.w),
+            title: Text(
+              'Tools',
+              style: AppTheme.getHeadingStyle(fontSize: AppTheme.fontSizeXL.sp),
+            ),
+          ),
+          Divider(height: 1, color: AppTheme.secondaryColor),
+          _buildSubItem('Database', Icons.storage, NavigationHelper.toDatabaseAdmin),
+          Divider(height: 1, color: AppTheme.secondaryColor),
+          _buildSubItem('Manage Memories', Icons.favorite, NavigationHelper.toMemoriesAdmin),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogoutSection() {
+    return Material(
+      color: AppTheme.surfaceColor,
+      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      clipBehavior: Clip.antiAlias,
+      elevation: 2,
+      shadowColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+      child: ListTile(
+        leading: Icon(Icons.logout, color: Colors.red.shade400, size: 6.w),
+        title: Text(
+          'Log Out',
+          style: AppTheme.getHeadingStyle(fontSize: AppTheme.fontSizeXL.sp),
+        ),
+        trailing: Icon(Icons.chevron_right, color: AppTheme.textSecondary),
+        onTap: _confirmLogout,
+      ),
+    );
+  }
+
+  void _confirmLogout() {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        ),
+        title: Text(
+          'Log Out',
+          style: AppTheme.getHeadingStyle(fontSize: AppTheme.fontSizeXL.sp),
+        ),
+        content: Text(
+          'Are you sure you want to log out?',
+          style: AppTheme.getBodyStyle(fontSize: AppTheme.fontSizeMedium.sp),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Cancel',
+              style: AppTheme.getBodyStyle(
+                fontSize: AppTheme.fontSizeMedium.sp,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Get.back();
+              await AppSettingsNavigation.performLogout();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+              ),
+            ),
+            child: Text(
+              'Log Out',
+              style: AppTheme.getBodyStyle(
+                fontSize: AppTheme.fontSizeMedium.sp,
+                color: Colors.white,
+              ).copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildDatabaseInfoSection() {
     return Container(
       decoration: BoxDecoration(
@@ -164,6 +260,33 @@ class _AdminSettingsListWidgetState extends State<AdminSettingsListWidget> {
   }
 
   void _showDatabaseInfoDialog() {
+    AppSettingsNavigation.showDatabaseInfo(_dbInfo);
+  }
+}
+
+/// Opens app settings sub-screens (used from Profile hub).
+class AppSettingsNavigation {
+  static Future<void> performLogout() async {
+    if (Get.isRegistered<AdminSessionController>()) {
+      Get.find<AdminSessionController>().lock();
+    }
+    await Get.find<AuthController>().signOut();
+    Get.offAllNamed(AppRoutes.welcome);
+  }
+
+  static void openColorPalette() {
+    Get.to(() => _ColorPaletteScreen(), transition: Transition.rightToLeft);
+  }
+
+  static void openFontCombination() {
+    Get.to(() => _FontCombinationScreen(), transition: Transition.rightToLeft);
+  }
+
+  static void openCustomizedText() {
+    Get.to(() => _CustomizedTextScreen(), transition: Transition.rightToLeft);
+  }
+
+  static void showDatabaseInfo(Map<String, dynamic>? dbInfo) {
     Get.dialog(
       Dialog(
         shape: RoundedRectangleBorder(
@@ -171,9 +294,58 @@ class _AdminSettingsListWidgetState extends State<AdminSettingsListWidget> {
         ),
         child: Flexible(
           child: SingleChildScrollView(
-            child: DatabaseInfoWidget(dbInfo: _dbInfo),
+            child: DatabaseInfoWidget(dbInfo: dbInfo),
           ),
         ),
+      ),
+    );
+  }
+
+  static Future<void> confirmLogout() async {
+    Get.dialog(
+      AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        ),
+        title: Text(
+          'Log Out',
+          style: AppTheme.getHeadingStyle(fontSize: AppTheme.fontSizeXL.sp),
+        ),
+        content: Text(
+          'Are you sure you want to log out?',
+          style: AppTheme.getBodyStyle(fontSize: AppTheme.fontSizeMedium.sp),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Get.back(),
+            child: Text(
+              'Cancel',
+              style: AppTheme.getBodyStyle(
+                fontSize: AppTheme.fontSizeMedium.sp,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Get.back();
+              await AppSettingsNavigation.performLogout();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade400,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+              ),
+            ),
+            child: Text(
+              'Log Out',
+              style: AppTheme.getBodyStyle(
+                fontSize: AppTheme.fontSizeMedium.sp,
+                color: Colors.white,
+              ).copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -400,10 +572,16 @@ class _FontCombinationScreen extends StatelessWidget {
               final combination = AppSettings.fontCombinations[index];
               final isSelected = combination.id == currentCombination.id;
 
-              return ListTile(
-                title: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              return Material(
+                color: AppTheme.surfaceColor,
+                borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                child: ListTile(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+                  ),
+                  title: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                     Text(
                       combination.name,
                       style: AppTheme.getBodyStyle(
@@ -455,12 +633,10 @@ class _FontCombinationScreen extends StatelessWidget {
                       snackPosition: SnackPosition.BOTTOM,
                       duration: Duration(milliseconds: 800));
                 },
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-                ),
                 tileColor: isSelected
                     ? AppTheme.secondaryColor.withOpacity(0.1)
                     : null,
+                ),
               );
             },
           ),

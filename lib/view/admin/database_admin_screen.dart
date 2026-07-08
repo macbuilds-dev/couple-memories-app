@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
+import 'package:yaaram/controller/memory_controller.dart';
 import '../../controller/utils/database_admin.dart';
 import '../../controller/utils/theme/app_theme.dart';
 import '../widgets/admin/admin_app_bar_widget.dart';
@@ -29,7 +31,7 @@ class _DatabaseAdminScreenState extends State<DatabaseAdminScreen> {
     setState(() => _isLoading = true);
     final info = await DatabaseAdmin.getDatabaseInfo();
     final tables = await DatabaseAdmin.getTableInfo();
-    
+
     setState(() {
       _dbInfo = info;
       _tableInfo = tables;
@@ -37,10 +39,15 @@ class _DatabaseAdminScreenState extends State<DatabaseAdminScreen> {
     });
   }
 
+  Future<void> _onRefresh() async {
+    await _loadDatabaseInfo();
+    await Get.find<MemoryController>().loadMemories();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const AdminAppBarWidget(title: 'Database Admin'),
+      appBar: const AdminAppBarWidget(title: 'Database'),
       body: Container(
         decoration: BoxDecoration(
           gradient: AppTheme.backgroundGradient,
@@ -56,7 +63,7 @@ class _DatabaseAdminScreenState extends State<DatabaseAdminScreen> {
                     SizedBox(height: 3.h),
                     TableInfoWidget(tableInfo: _tableInfo),
                     SizedBox(height: 3.h),
-                    AdminActionsSectionWidget(onRefresh: _loadDatabaseInfo),
+                    AdminActionsSectionWidget(onRefresh: _onRefresh),
                   ],
                 ),
               ),
