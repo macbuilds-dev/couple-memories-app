@@ -5,7 +5,7 @@ import 'package:yaaram/controller/memory_controller.dart';
 import 'package:yaaram/model/memory_model/memory_model.dart';
 import '../../controller/utils/theme/app_theme.dart';
 import '../../controller/utils/date_utils.dart';
-import '../memory_detail_screen/memory_detail_screen.dart';
+import 'package:yaaram/utils/navigation_helper.dart';
 import 'memory_card_media.dart';
 
 class MemoryCardWidget extends StatelessWidget {
@@ -28,10 +28,7 @@ class MemoryCardWidget extends StatelessWidget {
 
     return GestureDetector(
       onTap: () {
-        Get.to(
-          () => MemoryDetailScreen(memory: memory),
-          transition: Transition.rightToLeft,
-        );
+        NavigationHelper.toMemoryDetail(memory);
       },
       child: Container(
         margin: EdgeInsets.only(bottom: 3.h),

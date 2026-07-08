@@ -5,7 +5,7 @@ import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:yaaram/controller/memory_controller.dart';
 import 'package:yaaram/model/memory_model/memory_model.dart';
 import 'package:yaaram/model/media_file_model/media_file_model.dart';
-import 'package:yaaram/view/memory_detail_screen/memory_detail_screen.dart';
+import 'package:yaaram/utils/navigation_helper.dart';
 import '../../controller/utils/theme/app_theme.dart';
 import '../widgets/memory_card_media.dart';
 import '../widgets/media_picker_widget.dart';
@@ -15,7 +15,16 @@ import '../widgets/save_button_widget.dart';
 import '../widgets/media_source_dialog.dart';
 
 class AddMemoryScreen extends StatefulWidget {
-  const AddMemoryScreen({Key? key}) : super(key: key);
+  final Memory? memoryToEdit;
+  final String? initialTitle;
+  final String? initialDescription;
+
+  const AddMemoryScreen({
+    Key? key,
+    this.memoryToEdit,
+    this.initialTitle,
+    this.initialDescription,
+  }) : super(key: key);
 
   @override
   State<AddMemoryScreen> createState() => _AddMemoryScreenState();
@@ -28,15 +37,35 @@ class _AddMemoryScreenState extends State<AddMemoryScreen>
   final _locationController = TextEditingController();
   final _memoryController = Get.find<MemoryController>();
   final ImagePicker _imagePicker = ImagePicker();
-  
+
+  bool _isTogetherMoment = false;
   DateTime _selectedDate = DateTime.now();
   List<MediaFile> _selectedMedia = [];
   late AnimationController _slideController;
   late Animation<Offset> _slideAnimation;
 
+  bool get _isEditing => widget.memoryToEdit != null;
+
   @override
   void initState() {
     super.initState();
+    if (_isEditing) {
+      final memory = widget.memoryToEdit!;
+      _titleController.text = memory.title;
+      _descriptionController.text = memory.description;
+      _locationController.text = memory.location;
+      _selectedDate = memory.date;
+      _selectedMedia = List.from(memory.mediaFiles);
+      _isTogetherMoment = memory.isTogetherMoment;
+    } else {
+      if (widget.initialTitle != null) {
+        _titleController.text = widget.initialTitle!;
+      }
+      if (widget.initialDescription != null) {
+        _descriptionController.text = widget.initialDescription!;
+      }
+    }
+
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 500),
       vsync: this,
@@ -133,17 +162,19 @@ class _AddMemoryScreenState extends State<AddMemoryScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Create a New Memory',
+                            _isEditing ? 'Edit Memory' : 'Create a New Memory',
                             style: AppTheme.getTitleStyle(
                               fontSize: AppTheme.fontSizeTitle.sp,
                             ),
                           ),
                           SizedBox(height: 1.h),
                           Text(
-                            'Capture this beautiful moment forever',
+                            _isEditing
+                                ? 'Update this beautiful moment'
+                                : 'Capture this beautiful moment forever',
                             style: AppTheme.getScriptStyle(
                               fontSize: AppTheme.fontSizeLarge.sp,
-                              color: AppTheme.textSecondary.withOpacity(0.7),
+                              color: AppTheme.textSecondary.withValues(alpha: 0.7),
                             ),
                           ),
                           SizedBox(height: 4.h),
@@ -157,7 +188,7 @@ class _AddMemoryScreenState extends State<AddMemoryScreen>
                                 borderRadius: BorderRadius.circular(AppTheme.radiusXL),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppTheme.primaryColor.withOpacity(0.1),
+                                    color: AppTheme.primaryColor.withValues(alpha: 0.1),
                                     blurRadius: 10,
                                   ),
                                 ],
@@ -198,9 +229,30 @@ class _AddMemoryScreenState extends State<AddMemoryScreen>
                             selectedDate: _selectedDate,
                             onDateSelected: (date) => setState(() => _selectedDate = date),
                           ),
+                          SizedBox(height: 2.h),
+                          SwitchListTile(
+                            contentPadding: EdgeInsets.zero,
+                            title: Text(
+                              'We were both there',
+                              style: AppTheme.getBodyStyle(
+                                fontSize: AppTheme.fontSizeMedium.sp,
+                              ),
+                            ),
+                            subtitle: Text(
+                              'Mark this as a together moment',
+                              style: AppTheme.getCaptionStyle(
+                                fontSize: AppTheme.fontSizeSmall.sp,
+                                color: AppTheme.textSecondary.withValues(alpha: 0.7),
+                              ),
+                            ),
+                            value: _isTogetherMoment,
+                            activeThumbColor: AppTheme.secondaryColor,
+                            onChanged: (v) => setState(() => _isTogetherMoment = v),
+                          ),
                           SizedBox(height: 4.h),
                           SaveButtonWidget(
                             onPressed: _saveMemory,
+                            label: _isEditing ? 'Update Memory' : 'Save Memory',
                           ),
                           SizedBox(height: 2.5.h),
                         ],
@@ -230,7 +282,7 @@ class _AddMemoryScreenState extends State<AddMemoryScreen>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
+                    color: Colors.black.withValues(alpha: 0.1),
                     blurRadius: 10,
                   ),
                 ],
@@ -244,7 +296,7 @@ class _AddMemoryScreenState extends State<AddMemoryScreen>
           ),
           SizedBox(width: 4.w),
           Text(
-            'New Memory',
+            _isEditing ? 'Edit Memory' : 'New Memory',
             style: AppTheme.getHeadingStyle(
               fontSize: AppTheme.fontSizeXXL.sp,
             ),
@@ -264,6 +316,28 @@ class _AddMemoryScreenState extends State<AddMemoryScreen>
       return;
     }
 
+    if (_isEditing) {
+      final updated = widget.memoryToEdit!.copyWith(
+        date: _selectedDate,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        location: _locationController.text.trim(),
+        mediaFiles: _selectedMedia,
+        isTogetherMoment: _isTogetherMoment,
+      );
+
+      final success = await _memoryController.updateMemory(updated);
+      if (success) {
+        Get.back();
+        final refreshed = _memoryController.memories
+            .firstWhereOrNull((m) => m.id == updated.id);
+        if (refreshed != null) {
+          NavigationHelper.toMemoryDetail(refreshed);
+        }
+      }
+      return;
+    }
+
     final newMemory = Memory(
       id: DateTime.now().millisecondsSinceEpoch,
       date: _selectedDate,
@@ -273,16 +347,14 @@ class _AddMemoryScreenState extends State<AddMemoryScreen>
       isFavorite: false,
       isDeleted: false,
       mediaFiles: _selectedMedia,
+      isTogetherMoment: _isTogetherMoment,
     );
 
     final createdMemory = await _memoryController.addMemory(newMemory);
-    
+
     if (createdMemory != null) {
       Get.back();
-      Get.to(
-        () => MemoryDetailScreen(memory: createdMemory),
-        transition: Transition.fadeIn,
-      );
+      NavigationHelper.toMemoryDetail(createdMemory);
     } else {
       Get.back();
     }

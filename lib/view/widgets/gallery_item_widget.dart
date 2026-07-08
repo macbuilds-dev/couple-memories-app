@@ -1,10 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import '../../controller/utils/theme/app_theme.dart';
 import '../../model/memory_model/memory_model.dart';
-import '../memory_detail_screen/memory_detail_screen.dart';
+import 'package:yaaram/utils/navigation_helper.dart';
+import 'package:yaaram/utils/media_utils.dart';
 import 'video_thumbnail_widget.dart';
 
 class GalleryItemWidget extends StatelessWidget {
@@ -31,10 +30,7 @@ class GalleryItemWidget extends StatelessWidget {
         );
       },
       child: GestureDetector(
-        onTap: () {
-          Get.to(() => MemoryDetailScreen(memory: memory),
-              transition: Transition.rightToLeft);
-        },
+        onTap: () => NavigationHelper.toMemoryDetail(memory),
         child: Container(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
@@ -54,18 +50,15 @@ class GalleryItemWidget extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
                   child: firstMedia.isImage
-                      ? Image.file(
-                          File(firstMedia.path),
+                      ? MediaUtils.buildImage(
+                          path: firstMedia.path,
                           fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              decoration: BoxDecoration(
-                                gradient: AppTheme.cardGradient,
-                              ),
-                            );
-                          },
                         )
-                      : VideoThumbnailWidget(videoPath: firstMedia.path),
+                      : VideoThumbnailWidget(
+                          videoPath: firstMedia.path,
+                          isRemote: firstMedia.isRemote,
+                          thumbnailUrl: firstMedia.thumbnailPath,
+                        ),
                 )
               else
                 Container(

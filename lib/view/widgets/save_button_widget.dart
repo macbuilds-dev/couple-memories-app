@@ -4,10 +4,12 @@ import '../../controller/utils/theme/app_theme.dart';
 
 class SaveButtonWidget extends StatelessWidget {
   final VoidCallback onPressed;
+  final String label;
 
   const SaveButtonWidget({
     Key? key,
     required this.onPressed,
+    this.label = 'Save Memory',
   }) : super(key: key);
 
   @override
@@ -41,7 +43,7 @@ class SaveButtonWidget extends StatelessWidget {
                 ),
                 SizedBox(width: 3.w),
                 Text(
-                  'Save Memory',
+                  label,
                   style: AppTheme.getBodyStyle(
                     fontSize: AppTheme.fontSizeLarge.sp,
                     color: Colors.white,

@@ -19,7 +19,7 @@ class DeleteMemoryDialog {
           style: AppTheme.getHeadingStyle(fontSize: AppTheme.fontSizeXL.sp),
         ),
         content: Text(
-          'This memory will be moved to trash. You can restore it from the admin panel.',
+          'This memory will be moved to trash. You can restore it from settings.',
           style: AppTheme.getBodyStyle(fontSize: AppTheme.fontSizeMedium.sp),
         ),
         actions: [
