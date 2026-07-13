@@ -11,6 +11,16 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          android: false
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
+
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -45,7 +55,7 @@ jobs:
       - name: Prepare release APK
         run: |
           APK_NAME="yaaram-${{ steps.version.outputs.app_version }}-build.${{ github.run_number }}.apk"
-          cp build/app/outputs/flutter-apk/app-release.apk "$APK_NAME"
+          mv build/app/outputs/flutter-apk/app-release.apk "$APK_NAME"
           echo "apk_name=$APK_NAME" >> "$GITHUB_ENV"
 
       - name: Upload APK artifact
