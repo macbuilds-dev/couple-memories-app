@@ -112,6 +112,18 @@ service cloud.firestore {
 
           .hasOnly(['nickname', 'nicknameSetBy']);
 
+
+
+      match /alerts/{alertId} {
+
+        allow read, update: if isSignedIn() && request.auth.uid == userId;
+
+        allow create: if isSignedIn() && isPartnerOf(userId);
+
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+
+      }
+
     }
 
 
