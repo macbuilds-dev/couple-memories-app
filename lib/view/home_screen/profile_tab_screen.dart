@@ -7,6 +7,7 @@ import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:yaaram/controller/admin_session_controller.dart';
 import 'package:yaaram/controller/auth_controller.dart';
 import 'package:yaaram/controller/utils/database_admin.dart';
+import 'package:yaaram/controller/utils/settings/settings_controller.dart';
 import 'package:yaaram/controller/utils/theme/app_theme.dart';
 import 'package:yaaram/utils/media_utils.dart';
 import 'package:yaaram/utils/navigation_helper.dart';
@@ -95,6 +96,8 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
       final showAdminTools = adminSession.isUnlocked.value;
 
       return Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: BoxDecoration(gradient: AppTheme.backgroundGradient),
         child: SingleChildScrollView(
           padding: EdgeInsets.fromLTRB(5.w, 2.h, 5.w, 4.h),
@@ -115,6 +118,27 @@ class _ProfileTabScreenState extends State<ProfileTabScreen> {
                 title: 'Color Palette',
                 onTap: AppSettingsNavigation.openColorPalette,
               ),
+              Obx(() {
+                final settings = Get.find<SettingsController>().settings.value;
+                final isDark = settings.isDarkMode;
+                return ProfileMenuTile(
+                  icon: isDark
+                      ? Icons.dark_mode_rounded
+                      : Icons.light_mode_rounded,
+                  title: isDark ? 'Dark mode' : 'Light mode',
+                  subtitle: isDark
+                      ? 'Using ${settings.selectedPalette.name} night tones'
+                      : 'Using ${settings.selectedPalette.name} day tones',
+                  trailing: Icon(
+                    isDark
+                        ? Icons.toggle_on_rounded
+                        : Icons.toggle_off_outlined,
+                    color: AppTheme.secondaryColor,
+                    size: 9.w,
+                  ),
+                  onTap: () => Get.find<SettingsController>().toggleDarkMode(),
+                );
+              }),
               ProfileMenuTile(
                 icon: Icons.font_download_outlined,
                 title: 'Font Combination',

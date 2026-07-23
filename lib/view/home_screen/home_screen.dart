@@ -40,30 +40,29 @@ class _HomeScreenState extends State<HomeScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.surfaceColor,
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: BoxDecoration(
           gradient: AppTheme.backgroundGradient,
         ),
         child: SafeArea(
-          child: Obx(() => Column(
-                children: [
-                  Expanded(
-                    child: IndexedStack(
-                      index: _tabController.selectedIndex.value,
-                      children: const [
-                        DiscoverTimelineScreen(),
-                        MomentsScreen(),
-                        CoupleChatScreen(),
-                        ProfileTabScreen(),
-                      ],
-                    ),
-                  ),
-                ],
-              )),
+          bottom: false,
+          child: Obx(
+            () => IndexedStack(
+              index: _tabController.selectedIndex.value,
+              children: const [
+                DiscoverTimelineScreen(),
+                MomentsScreen(),
+                CoupleChatScreen(),
+                ProfileTabScreen(),
+              ],
+            ),
+          ),
         ),
       ),
       floatingActionButton: Obx(() {
-        // FAB only on Moments tab.
         if (_tabController.selectedIndex.value != 1) {
           return const SizedBox.shrink();
         }
@@ -84,10 +83,15 @@ class _HomeScreenState extends State<HomeScreen>
           ),
         );
       }),
-      bottomNavigationBar: Obx(() => BottomNavWidget(
+      bottomNavigationBar: ColoredBox(
+        color: AppTheme.surfaceColor,
+        child: Obx(
+          () => BottomNavWidget(
             currentIndex: _tabController.selectedIndex.value,
             onTap: (index) => _tabController.selectedIndex.value = index,
-          )),
+          ),
+        ),
+      ),
     );
   }
 }

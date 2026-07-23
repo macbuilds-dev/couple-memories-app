@@ -5,17 +5,21 @@ import 'package:yaaram/controller/utils/theme/app_theme.dart';
 class ProfileMenuTile extends StatelessWidget {
   final IconData icon;
   final String title;
+  final String? subtitle;
   final VoidCallback onTap;
   final Color? iconColor;
   final Color? titleColor;
+  final Widget? trailing;
 
   const ProfileMenuTile({
     super.key,
     required this.icon,
     required this.title,
     required this.onTap,
+    this.subtitle,
     this.iconColor,
     this.titleColor,
+    this.trailing,
   });
 
   @override
@@ -54,19 +58,36 @@ class ProfileMenuTile extends StatelessWidget {
                   ),
                   SizedBox(width: 4.w),
                   Expanded(
-                    child: Text(
-                      title,
-                      style: AppTheme.getBodyStyle(
-                        fontSize: AppTheme.fontSizeLarge.sp,
-                        color: titleColor ?? AppTheme.textPrimary,
-                      ).copyWith(fontWeight: FontWeight.w500),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: AppTheme.getBodyStyle(
+                            fontSize: AppTheme.fontSizeLarge.sp,
+                            color: titleColor ?? AppTheme.textPrimary,
+                          ).copyWith(fontWeight: FontWeight.w500),
+                        ),
+                        if (subtitle != null) ...[
+                          SizedBox(height: 0.3.h),
+                          Text(
+                            subtitle!,
+                            style: AppTheme.getCaptionStyle(
+                              fontSize: AppTheme.fontSizeSmall.sp,
+                              color: AppTheme.textSecondary
+                                  .withValues(alpha: 0.7),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
-                  Icon(
-                    Icons.chevron_right,
-                    color: AppTheme.textSecondary.withValues(alpha: 0.5),
-                    size: 5.w,
-                  ),
+                  trailing ??
+                      Icon(
+                        Icons.chevron_right,
+                        color: AppTheme.textSecondary.withValues(alpha: 0.5),
+                        size: 5.w,
+                      ),
                 ],
               ),
             ),

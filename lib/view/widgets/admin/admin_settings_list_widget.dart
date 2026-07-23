@@ -397,7 +397,7 @@ class _ColorPaletteScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Choose your favorite color scheme',
+            'Choose a color family. Light or dark tones follow its default, and you can switch mode anytime in Profile.',
             style: AppTheme.getBodyStyle(
               fontSize: AppTheme.fontSizeSmall.sp,
               color: AppTheme.textSecondary.withOpacity(0.7),
@@ -411,7 +411,7 @@ class _ColorPaletteScreen extends StatelessWidget {
               crossAxisCount: 2,
               crossAxisSpacing: 3.w,
               mainAxisSpacing: 3.w,
-              childAspectRatio: 1.5,
+              childAspectRatio: 1.15,
             ),
             itemCount: AppSettings.colorPalettes.length,
             itemBuilder: (context, index) {
@@ -421,61 +421,42 @@ class _ColorPaletteScreen extends StatelessWidget {
               return GestureDetector(
                 onTap: () {
                   controller.updateColorPalette(palette);
-                  Get.snackbar('Success', 'Color palette updated!',
-                      snackPosition: SnackPosition.BOTTOM);
+                  Get.snackbar(
+                    'Palette updated',
+                    palette.defaultDark
+                        ? '${palette.name} · dark mode on'
+                        : '${palette.name} · light mode on',
+                    snackPosition: SnackPosition.BOTTOM,
+                  );
                 },
                 child: Container(
+                  padding: EdgeInsets.all(2.5.w),
                   decoration: BoxDecoration(
+                    color: AppTheme.surfaceColor,
                     borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
                     border: Border.all(
                       color: isSelected
                           ? AppTheme.secondaryColor
-                          : Colors.grey.shade300,
-                      width: isSelected ? 3 : 1,
+                          : AppTheme.secondaryColor.withValues(alpha: 0.2),
+                      width: isSelected ? 2.2 : 1.2,
                     ),
-                    boxShadow: isSelected
-                        ? [
-                            BoxShadow(
-                              color: AppTheme.secondaryColor.withOpacity(0.3),
-                              blurRadius: 8,
-                              spreadRadius: 2,
-                            ),
-                          ]
-                        : null,
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Container(
-                            width: 5.w,
-                            height: 5.w,
-                            decoration: BoxDecoration(
-                              color: palette.primaryColor,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 1),
+                          Expanded(
+                            child: _PaletteTonePreview(
+                              label: 'Day',
+                              tone: palette.light,
                             ),
                           ),
-                          SizedBox(width: 1.w),
-                          Container(
-                            width: 5.w,
-                            height: 5.w,
-                            decoration: BoxDecoration(
-                              color: palette.secondaryColor,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 1),
-                            ),
-                          ),
-                          SizedBox(width: 1.w),
-                          Container(
-                            width: 5.w,
-                            height: 5.w,
-                            decoration: BoxDecoration(
-                              color: palette.accentColor,
-                              shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 1),
+                          SizedBox(width: 1.5.w),
+                          Expanded(
+                            child: _PaletteTonePreview(
+                              label: 'Night',
+                              tone: palette.dark,
                             ),
                           ),
                         ],
@@ -485,18 +466,20 @@ class _ColorPaletteScreen extends StatelessWidget {
                         palette.name,
                         style: AppTheme.getBodyStyle(
                           fontSize: AppTheme.fontSizeSmall.sp,
+                          color: AppTheme.textPrimary,
                         ).copyWith(
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          fontWeight:
+                              isSelected ? FontWeight.bold : FontWeight.w500,
                         ),
                         textAlign: TextAlign.center,
                       ),
                       if (isSelected)
                         Padding(
-                          padding: EdgeInsets.only(top: 0.5.h),
+                          padding: EdgeInsets.only(top: 0.4.h),
                           child: Icon(
                             Icons.check_circle,
                             color: AppTheme.secondaryColor,
-                            size: 5.w,
+                            size: 4.5.w,
                           ),
                         ),
                     ],
@@ -506,6 +489,70 @@ class _ColorPaletteScreen extends StatelessWidget {
             },
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _PaletteTonePreview extends StatelessWidget {
+  final String label;
+  final PaletteTone tone;
+
+  const _PaletteTonePreview({
+    required this.label,
+    required this.tone,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(vertical: 1.h),
+      decoration: BoxDecoration(
+        color: tone.surfaceColor,
+        borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
+        border: Border.all(
+          color: tone.secondaryColor.withValues(alpha: 0.35),
+        ),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _Dot(tone.primaryColor),
+              SizedBox(width: 1.w),
+              _Dot(tone.secondaryColor),
+            ],
+          ),
+          SizedBox(height: 0.4.h),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 10.sp,
+              color: tone.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Dot extends StatelessWidget {
+  final Color color;
+
+  const _Dot(this.color);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 3.5.w,
+      height: 3.5.w,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withValues(alpha: 0.7), width: 1),
       ),
     );
   }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:yaaram/controller/utils/theme/app_theme.dart';
 import 'package:yaaram/view/widgets/app_logo_widget.dart';
@@ -20,6 +19,7 @@ class BottomNavWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
         color: AppTheme.surfaceColor,
         border: Border(
@@ -28,13 +28,6 @@ class BottomNavWidget extends StatelessWidget {
             width: 1,
           ),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: AppTheme.primaryColor.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, -4),
-          ),
-        ],
       ),
       child: SafeArea(
         top: false,
@@ -70,7 +63,8 @@ class BottomNavWidget extends StatelessWidget {
                         onTap: () => onTap(0),
                         icon: _CardsNavIcon(
                           active: currentIndex == 0,
-                          inactiveColor: AppTheme.textSecondary.withValues(alpha: 0.45),
+                          inactiveColor:
+                              AppTheme.textSecondary.withValues(alpha: 0.45),
                         ),
                       ),
                       _NavTab(
@@ -78,7 +72,8 @@ class BottomNavWidget extends StatelessWidget {
                         onTap: () => onTap(1),
                         icon: _HeartNavIcon(
                           active: currentIndex == 1,
-                          inactiveColor: AppTheme.textSecondary.withValues(alpha: 0.45),
+                          inactiveColor:
+                              AppTheme.textSecondary.withValues(alpha: 0.45),
                         ),
                       ),
                       _NavTab(
@@ -86,7 +81,8 @@ class BottomNavWidget extends StatelessWidget {
                         onTap: () => onTap(2),
                         icon: _ChatNavIcon(
                           active: currentIndex == 2,
-                          inactiveColor: AppTheme.textSecondary.withValues(alpha: 0.45),
+                          inactiveColor:
+                              AppTheme.textSecondary.withValues(alpha: 0.45),
                         ),
                       ),
                       _NavTab(

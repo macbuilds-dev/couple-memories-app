@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:yaaram/controller/utils/theme/app_theme.dart';
 
@@ -41,6 +40,8 @@ class AppTextField extends StatelessWidget {
   final Widget? suffixIcon;
   final TextCapitalization textCapitalization;
   final int? maxLength;
+  final int maxLines;
+  final String? hint;
   final ValueChanged<String>? onChanged;
 
   const AppTextField({
@@ -52,18 +53,25 @@ class AppTextField extends StatelessWidget {
     this.suffixIcon,
     this.textCapitalization = TextCapitalization.none,
     this.maxLength,
+    this.maxLines = 1,
+    this.hint,
     this.onChanged,
   });
 
-  static InputDecoration decoration(String label, {Widget? suffixIcon}) {
+  static InputDecoration decoration(String label, {Widget? suffixIcon, String? hint}) {
     final borderRadius = BorderRadius.circular(AppTheme.radiusMedium);
 
     return InputDecoration(
       labelText: label,
+      hintText: hint,
       suffixIcon: suffixIcon,
       labelStyle: AppTheme.getBodyStyle(
         fontSize: AppTheme.fontSizeMedium.sp,
         color: AppTheme.textSecondary.withValues(alpha: 0.7),
+      ),
+      hintStyle: AppTheme.getBodyStyle(
+        fontSize: AppTheme.fontSizeMedium.sp,
+        color: AppTheme.textSecondary.withValues(alpha: 0.4),
       ),
       floatingLabelStyle: AppTheme.getBodyStyle(
         fontSize: AppTheme.fontSizeMedium.sp,
@@ -90,6 +98,7 @@ class AppTextField extends StatelessWidget {
         ),
       ),
       contentPadding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.h),
+      alignLabelWithHint: true,
     );
   }
 
@@ -101,13 +110,14 @@ class AppTextField extends StatelessWidget {
       keyboardType: keyboardType,
       textCapitalization: textCapitalization,
       maxLength: maxLength,
+      maxLines: maxLines,
       onChanged: onChanged,
       style: AppTheme.getBodyStyle(
         fontSize: AppTheme.fontSizeLarge.sp,
         color: AppTheme.textPrimary,
       ),
       cursorColor: AppTheme.secondaryColor,
-      decoration: decoration(label, suffixIcon: suffixIcon),
+      decoration: decoration(label, suffixIcon: suffixIcon, hint: hint),
     );
   }
 }
