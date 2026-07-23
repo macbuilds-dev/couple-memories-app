@@ -1,10 +1,8 @@
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:yaaram/controller/auth_controller.dart';
 import 'package:yaaram/controller/memory_controller.dart';
-import 'package:yaaram/firebase_options.dart';
 import 'package:yaaram/routes/app_routes.dart';
 import 'package:yaaram/controller/utils/settings/settings_controller.dart';
 import 'package:yaaram/controller/utils/theme/app_theme.dart';
@@ -50,7 +48,10 @@ class _SplashScreenState extends State<SplashScreen>
 
   Future<void> _navigateNext() async {
     final auth = Get.find<AuthController>();
+    // Don't hang forever if auth init stalls (network / Firebase).
+    final deadline = DateTime.now().add(const Duration(seconds: 12));
     while (!auth.isInitialized.value) {
+      if (DateTime.now().isAfter(deadline)) break;
       await Future.delayed(const Duration(milliseconds: 100));
     }
     if (!mounted) return;

@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:yaaram/model/user_profile_model.dart';
 import 'package:yaaram/services/couple_service.dart';
+import 'package:yaaram/services/push_notification_service.dart';
 import 'package:yaaram/services/user_profile_service.dart';
 
 class AuthController extends GetxController {
@@ -16,6 +19,8 @@ class AuthController extends GetxController {
   final Rx<UserProfile?> userProfile = Rx<UserProfile?>(null);
   final RxBool isLoading = false.obs;
   final RxBool isInitialized = false.obs;
+
+  StreamSubscription<CoupleProfile>? _profileWatchSub;
 
   bool get isLoggedIn => firebaseUser.value != null;
   bool get hasCouple => profile.value?.hasCouple ?? false;
@@ -32,6 +37,9 @@ class AuthController extends GetxController {
   }
 
   Future<void> _onAuthChanged(User? user) async {
+    await _profileWatchSub?.cancel();
+    _profileWatchSub = null;
+
     if (user == null) {
       profile.value = null;
       userProfile.value = null;
@@ -41,6 +49,13 @@ class AuthController extends GetxController {
     try {
       profile.value = await _coupleService.ensureUserDocument(user);
       userProfile.value = await _userProfileService.getUserProfile(user.uid);
+      _profileWatchSub =
+          _coupleService.watchProfile(user.uid).listen((p) {
+        profile.value = p;
+      });
+      try {
+        await Get.find<PushNotificationService>().refreshAndSaveToken();
+      } catch (_) {}
     } catch (e) {
       print('Error loading profile: $e');
     } finally {
@@ -59,6 +74,12 @@ class AuthController extends GetxController {
     if (user == null) return;
     profile.value = await _coupleService.getProfile(user.uid);
     await refreshUserProfile();
+  }
+
+  @override
+  void onClose() {
+    _profileWatchSub?.cancel();
+    super.onClose();
   }
 
   Future<void> waitUntilReady() async {
@@ -102,6 +123,9 @@ class AuthController extends GetxController {
   }
 
   Future<void> signOut() async {
+    try {
+      await Get.find<PushNotificationService>().clearToken();
+    } catch (_) {}
     await _googleSignIn.signOut();
     await _auth.signOut();
     profile.value = null;
@@ -150,12 +174,18 @@ class AuthController extends GetxController {
         return 'No account found for this email.';
       case 'wrong-password':
         return 'Incorrect password.';
+      case 'invalid-credential':
+        return 'Incorrect email or password. If you are new, create an account.';
       case 'email-already-in-use':
         return 'An account already exists with this email.';
       case 'weak-password':
         return 'Password must be at least 6 characters.';
       case 'invalid-email':
         return 'Please enter a valid email address.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please try again later.';
+      case 'network-request-failed':
+        return 'Network error. Check your connection and try again.';
       default:
         return e.message ?? 'Authentication failed.';
     }
