@@ -25,13 +25,17 @@ class AppTheme {
   
   static final AppSettings _defaultSettings = AppSettings();
 
-  // Colors - reactive to settings
-  static Color get primaryColor => _settings.selectedPalette.primaryColor;
-  static Color get secondaryColor => _settings.selectedPalette.secondaryColor;
-  static Color get surfaceColor => _settings.selectedPalette.surfaceColor;
-  static Color get accentColor => _settings.selectedPalette.accentColor;
-  static Color get textPrimary => _settings.selectedPalette.textPrimary;
-  static Color get textSecondary => _settings.selectedPalette.textSecondary;
+  static PaletteTone get _tone => _settings.activeTone;
+
+  // Colors - reactive to settings + light/dark mode
+  static Color get primaryColor => _tone.primaryColor;
+  static Color get secondaryColor => _tone.secondaryColor;
+  static Color get surfaceColor => _tone.surfaceColor;
+  static Color get accentColor => _tone.accentColor;
+  static Color get textPrimary => _tone.textPrimary;
+  static Color get textSecondary => _tone.textSecondary;
+
+  static bool get isDarkMode => _settings.isDarkMode;
 
   // Font Sizes (Base sizes - will be scaled with responsive_sizer)
   static const double fontSizeSmall = 12.0;
@@ -332,26 +336,43 @@ class AppTheme {
   static Color get onDarkDivider => Colors.white.withValues(alpha: 0.2);
 
   // Theme Data
-  static ThemeData get themeData => ThemeData(
-        primaryColor: primaryColor,
-        scaffoldBackgroundColor: surfaceColor,
-        colorScheme: ColorScheme.light(
-          primary: primaryColor,
-          secondary: secondaryColor,
-          surface: surfaceColor,
+  static ThemeData get themeData {
+    final brightness = isDarkMode ? Brightness.dark : Brightness.light;
+    return ThemeData(
+      brightness: brightness,
+      primaryColor: primaryColor,
+      scaffoldBackgroundColor: surfaceColor,
+      colorScheme: ColorScheme(
+        brightness: brightness,
+        primary: primaryColor,
+        onPrimary: Colors.white,
+        secondary: secondaryColor,
+        onSecondary: Colors.white,
+        surface: surfaceColor,
+        onSurface: textPrimary,
+        error: const Color(0xFFCF6679),
+        onError: Colors.white,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: surfaceColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusMedium),
         ),
-        dialogTheme: DialogThemeData(
-          backgroundColor: surfaceColor,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(radiusMedium),
-          ),
+      ),
+      popupMenuTheme: PopupMenuThemeData(
+        color: surfaceColor,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(radiusMedium),
         ),
-        textTheme: TextTheme(
-          displayLarge: getTitleStyle(),
-          displayMedium: getHeadingStyle(),
-          bodyLarge: getBodyStyle(),
-          bodyMedium: getBodyStyle(fontSize: fontSizeMedium),
-          bodySmall: getCaptionStyle(),
-        ),
-      );
+        textStyle: getBodyStyle(color: textPrimary),
+      ),
+      textTheme: TextTheme(
+        displayLarge: getTitleStyle(),
+        displayMedium: getHeadingStyle(),
+        bodyLarge: getBodyStyle(),
+        bodyMedium: getBodyStyle(fontSize: fontSizeMedium),
+        bodySmall: getCaptionStyle(),
+      ),
+    );
+  }
 }
