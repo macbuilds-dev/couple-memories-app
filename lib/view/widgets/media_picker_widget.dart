@@ -12,56 +12,66 @@ class MediaPickerWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 15.h,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-          gradient: AppTheme.cardGradient,
-          border: Border.all(
-            color: AppTheme.primaryColor.withOpacity(0.5),
-            width: 2,
-            style: BorderStyle.solid,
+    return Material(
+      color: AppTheme.surfaceColor,
+      borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+        child: Container(
+          width: double.infinity,
+          padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 2.2.h),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
+            border: Border.all(
+              color: AppTheme.secondaryColor.withValues(alpha: 0.25),
+              width: 1.2,
+            ),
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: EdgeInsets.all(4.w),
-              decoration: BoxDecoration(
-                gradient: AppTheme.primaryGradient,
-                borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
-              ),
-              child: Icon(
-                Icons.add_photo_alternate,
-                size: 8.w,
-                color: Colors.white,
-              ),
-            ),
-            SizedBox(width: 3.w),
-            Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Add Media',
-                  style: AppTheme.getHeadingStyle(
-                    fontSize: AppTheme.fontSizeXL.sp,
-                  ),
+          child: Row(
+            children: [
+              Container(
+                width: 12.w,
+                height: 12.w,
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
                 ),
-                SizedBox(height: 0.5.h),
-                Text(
-                  'Photos & Videos',
-                  style: AppTheme.getCaptionStyle(
-                    fontSize: AppTheme.fontSizeSmall.sp,
-                    color: AppTheme.textSecondary.withOpacity(0.7),
-                  ),
+                child: Icon(
+                  Icons.add_photo_alternate_outlined,
+                  size: 6.w,
+                  color: AppTheme.secondaryColor,
                 ),
-              ],
-            ),
-          ],
+              ),
+              SizedBox(width: 3.5.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Add media',
+                      style: AppTheme.getBodyStyle(
+                        fontSize: AppTheme.fontSizeLarge.sp,
+                        color: AppTheme.textPrimary,
+                      ).copyWith(fontWeight: FontWeight.w600),
+                    ),
+                    SizedBox(height: 0.3.h),
+                    Text(
+                      'Photos & videos from camera or gallery',
+                      style: AppTheme.getCaptionStyle(
+                        fontSize: AppTheme.fontSizeSmall.sp,
+                        color: AppTheme.textSecondary.withValues(alpha: 0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right_rounded,
+                color: AppTheme.textSecondary.withValues(alpha: 0.5),
+              ),
+            ],
+          ),
         ),
       ),
     );

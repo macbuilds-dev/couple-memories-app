@@ -17,79 +17,66 @@ class MediaSourceDialog {
           borderRadius: BorderRadius.circular(AppTheme.radiusMedium),
         ),
         child: Padding(
-          padding: EdgeInsets.symmetric(vertical: 1.h),
+          padding: EdgeInsets.fromLTRB(2.w, 2.h, 2.w, 1.5.h),
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Padding(
-                padding: EdgeInsets.fromLTRB(5.w, 2.h, 5.w, 1.h),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Add Media',
-                    style: AppTheme.getHeadingStyle(
-                      fontSize: AppTheme.fontSizeXL.sp,
-                    ),
+                padding: EdgeInsets.fromLTRB(3.w, 0.5.h, 3.w, 1.h),
+                child: Text(
+                  'Add media',
+                  style: AppTheme.getHeadingStyle(
+                    fontSize: AppTheme.fontSizeXL.sp,
+                    color: AppTheme.textSecondary,
                   ),
                 ),
               ),
-              ListTile(
-                leading: Icon(Icons.camera_alt, color: AppTheme.textSecondary),
-                title: Text(
-                  'Take Photo',
-                  style: AppTheme.getBodyStyle(
-                    fontSize: AppTheme.fontSizeMedium.sp,
-                  ),
-                ),
-                onTap: () {
-                  Get.back();
-                  onTakePhoto();
-                },
+              _option(
+                icon: Icons.camera_alt_outlined,
+                label: 'Take photo',
+                onTap: onTakePhoto,
               ),
-              ListTile(
-                leading: Icon(Icons.videocam, color: AppTheme.textSecondary),
-                title: Text(
-                  'Record Video',
-                  style: AppTheme.getBodyStyle(
-                    fontSize: AppTheme.fontSizeMedium.sp,
-                  ),
-                ),
-                onTap: () {
-                  Get.back();
-                  onRecordVideo();
-                },
+              _option(
+                icon: Icons.videocam_outlined,
+                label: 'Record video',
+                onTap: onRecordVideo,
               ),
-              ListTile(
-                leading: Icon(Icons.photo_library, color: AppTheme.textSecondary),
-                title: Text(
-                  'Choose Photos',
-                  style: AppTheme.getBodyStyle(
-                    fontSize: AppTheme.fontSizeMedium.sp,
-                  ),
-                ),
-                onTap: () {
-                  Get.back();
-                  onChoosePhotos();
-                },
+              _option(
+                icon: Icons.photo_library_outlined,
+                label: 'Choose photos',
+                onTap: onChoosePhotos,
               ),
-              ListTile(
-                leading: Icon(Icons.video_library, color: AppTheme.textSecondary),
-                title: Text(
-                  'Choose Video',
-                  style: AppTheme.getBodyStyle(
-                    fontSize: AppTheme.fontSizeMedium.sp,
-                  ),
-                ),
-                onTap: () {
-                  Get.back();
-                  onChooseVideo();
-                },
+              _option(
+                icon: Icons.video_library_outlined,
+                label: 'Choose video',
+                onTap: onChooseVideo,
               ),
-              SizedBox(height: 1.h),
             ],
           ),
         ),
       ),
+    );
+  }
+
+  static Widget _option({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return ListTile(
+      leading: Icon(icon, color: AppTheme.secondaryColor),
+      title: Text(
+        label,
+        style: AppTheme.getBodyStyle(
+          fontSize: AppTheme.fontSizeMedium.sp,
+          color: AppTheme.textPrimary,
+        ),
+      ),
+      onTap: () {
+        Get.back();
+        onTap();
+      },
     );
   }
 }
