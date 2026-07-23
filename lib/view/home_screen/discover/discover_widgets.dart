@@ -8,16 +8,13 @@ import 'package:yaaram/controller/utils/settings/settings_controller.dart';
 import 'package:yaaram/controller/utils/theme/app_theme.dart';
 import 'package:yaaram/model/memory_model/memory_model.dart';
 import 'package:yaaram/utils/media_utils.dart';
-import 'package:yaaram/utils/navigation_helper.dart';
 
 class DiscoverHeader extends StatelessWidget {
-  final VoidCallback? onExpand;
-  final Memory? currentMemory;
+  final VoidCallback? onReplay;
 
   const DiscoverHeader({
     super.key,
-    this.onExpand,
-    this.currentMemory,
+    this.onReplay,
   });
 
   @override
@@ -29,11 +26,8 @@ class DiscoverHeader extends StatelessWidget {
       child: Row(
         children: [
           _SquareHeaderButton(
-            icon: Icons.open_in_full_rounded,
-            onTap: currentMemory == null
-                ? null
-                : onExpand ??
-                    () => NavigationHelper.toDiscoverPreview(currentMemory!),
+            icon: Icons.replay_rounded,
+            onTap: onReplay,
           ),
           Expanded(
             child: Column(
@@ -58,7 +52,7 @@ class DiscoverHeader extends StatelessWidget {
               ],
             ),
           ),
-          // Spacer mirrors the expand button so the title stays centered.
+          // Keeps the title visually centered opposite the replay button.
           SizedBox(width: 11.w, height: 11.w),
         ],
       ),
@@ -93,14 +87,16 @@ class _SquareHeaderButton extends StatelessWidget {
 class DiscoverCardStack extends StatelessWidget {
   final List<Memory> memories;
   final int topIndex;
-  final double dismissOffset;
+  final Offset dismissOffset;
+  final double dismissProgress;
   final VoidCallback? onTopCardTap;
 
   const DiscoverCardStack({
     super.key,
     required this.memories,
     required this.topIndex,
-    this.dismissOffset = 0,
+    this.dismissOffset = Offset.zero,
+    this.dismissProgress = 0,
     this.onTopCardTap,
   });
 
@@ -124,7 +120,8 @@ class DiscoverCardStack extends StatelessWidget {
               memory: visible[i],
               depth: i,
               isTop: i == 0,
-              dismissOffset: i == 0 ? dismissOffset : 0,
+              dismissOffset: i == 0 ? dismissOffset : Offset.zero,
+              dismissProgress: i == 0 ? dismissProgress : 0,
               onTap: i == 0 ? onTopCardTap : null,
             ),
         ],
@@ -137,150 +134,165 @@ class _DiscoverCard extends StatelessWidget {
   final Memory memory;
   final int depth;
   final bool isTop;
-  final double dismissOffset;
+  final Offset dismissOffset;
+  final double dismissProgress;
   final VoidCallback? onTap;
 
   const _DiscoverCard({
     required this.memory,
     required this.depth,
     required this.isTop,
-    this.dismissOffset = 0,
+    this.dismissOffset = Offset.zero,
+    this.dismissProgress = 0,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final scale = 1 - (depth * 0.05);
-    final yOffset = depth * 2.2.h + dismissOffset;
-    final xTilt = depth == 1 ? 0.04 : depth == 2 ? -0.03 : 0.0;
+    final stackY = depth * 2.2.h;
+    final xTilt = depth == 1
+        ? 0.04
+        : depth == 2
+            ? -0.03
+            : dismissOffset.dx * 0.00085;
     final dateLabel = DateFormat('MMM d · h:mm a').format(memory.date);
     final firstMedia =
         memory.mediaFiles.isNotEmpty ? memory.mediaFiles.first : null;
     final imageCount = memory.images.length;
+    final opacity = (1.0 - dismissProgress).clamp(0.0, 1.0);
 
     return Positioned.fill(
-      child: Transform.translate(
-        offset: Offset(0, yOffset),
-        child: Transform.scale(
-          scale: scale,
-          child: Transform.rotate(
-            angle: xTilt,
-            child: GestureDetector(
-              onTap: isTop ? onTap : null,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 280),
-                curve: Curves.easeOutCubic,
-                margin: EdgeInsets.symmetric(horizontal: 5.w),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.35),
-                      blurRadius: 24,
-                      offset: const Offset(0, 12),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(AppTheme.radiusXL),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      if (firstMedia != null && firstMedia.isImage)
-                        MediaUtils.buildImage(path: firstMedia.path, fit: BoxFit.cover)
-                      else
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                              colors: [
-                                AppTheme.secondaryColor.withValues(alpha: 0.45),
-                                AppTheme.surfaceColor.withValues(alpha: 0.9),
-                              ],
-                            ),
-                          ),
-                          child: Icon(
-                            Icons.photo_library_outlined,
-                            size: 18.w,
-                            color: Colors.white.withValues(alpha: 0.35),
-                          ),
-                        ),
-                      Positioned(
-                        top: 2.5.h,
-                        left: 4.w,
-                        child: _GlassBadge(label: dateLabel),
-                      ),
-                      if (imageCount > 1)
-                        Positioned(
-                          right: 3.w,
-                          top: 0,
-                          bottom: 0,
-                          child: Center(
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: List.generate(
-                                imageCount.clamp(0, 5),
-                                (i) => Container(
-                                  margin: EdgeInsets.symmetric(vertical: 0.4.h),
-                                  width: 1.4.w,
-                                  height: 1.4.w,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: i == 0
-                                        ? AppTheme.secondaryColor
-                                        : Colors.white.withValues(alpha: 0.45),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: Container(
-                          padding: EdgeInsets.fromLTRB(5.w, 6.h, 5.w, 3.h),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withValues(alpha: 0.82),
-                              ],
-                            ),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                memory.title,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
-                                style: AppTheme.getHeadingStyle(
-                                  fontSize: AppTheme.fontSizeXXL.sp,
-                                  color: Colors.white,
-                                ),
-                              ),
-                              if (memory.subtitle.isNotEmpty) ...[
-                                SizedBox(height: 0.6.h),
-                                Text(
-                                  memory.subtitle,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: AppTheme.getBodyStyle(
-                                    fontSize: AppTheme.fontSizeMedium.sp,
-                                    color: Colors.white.withValues(alpha: 0.88),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ),
+      child: Opacity(
+        opacity: opacity,
+        child: Transform.translate(
+          offset: Offset(dismissOffset.dx, stackY + dismissOffset.dy),
+          child: Transform.scale(
+            scale: scale,
+            child: Transform.rotate(
+              angle: xTilt,
+              child: GestureDetector(
+                onTap: isTop ? onTap : null,
+                child: Container(
+                  margin: EdgeInsets.symmetric(horizontal: 5.w),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.35),
+                        blurRadius: 24,
+                        offset: const Offset(0, 12),
                       ),
                     ],
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(AppTheme.radiusXL),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        if (firstMedia != null && firstMedia.isImage)
+                          MediaUtils.buildImage(
+                            path: firstMedia.path,
+                            fit: BoxFit.cover,
+                          )
+                        else
+                          Container(
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                                colors: [
+                                  AppTheme.secondaryColor
+                                      .withValues(alpha: 0.45),
+                                  AppTheme.surfaceColor.withValues(alpha: 0.9),
+                                ],
+                              ),
+                            ),
+                            child: Icon(
+                              Icons.photo_library_outlined,
+                              size: 18.w,
+                              color: Colors.white.withValues(alpha: 0.35),
+                            ),
+                          ),
+                        Positioned(
+                          top: 2.5.h,
+                          left: 4.w,
+                          child: _GlassBadge(label: dateLabel),
+                        ),
+                        if (imageCount > 1)
+                          Positioned(
+                            right: 3.w,
+                            top: 0,
+                            bottom: 0,
+                            child: Center(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: List.generate(
+                                  imageCount.clamp(0, 5),
+                                  (i) => Container(
+                                    margin:
+                                        EdgeInsets.symmetric(vertical: 0.4.h),
+                                    width: 1.4.w,
+                                    height: 1.4.w,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: i == 0
+                                          ? AppTheme.secondaryColor
+                                          : Colors.white
+                                              .withValues(alpha: 0.45),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: Container(
+                            padding: EdgeInsets.fromLTRB(5.w, 6.h, 5.w, 3.h),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.black.withValues(alpha: 0.82),
+                                ],
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  memory.title,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: AppTheme.getHeadingStyle(
+                                    fontSize: AppTheme.fontSizeXXL.sp,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                if (memory.subtitle.isNotEmpty) ...[
+                                  SizedBox(height: 0.6.h),
+                                  Text(
+                                    memory.subtitle,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: AppTheme.getBodyStyle(
+                                      fontSize: AppTheme.fontSizeMedium.sp,
+                                      color: Colors.white
+                                          .withValues(alpha: 0.88),
+                                    ),
+                                  ),
+                                ],
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),

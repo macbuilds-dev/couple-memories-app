@@ -8,6 +8,8 @@ import 'package:yaaram/model/memory_model/memory_model.dart';
 import 'package:yaaram/utils/navigation_helper.dart';
 import 'package:yaaram/view/home_screen/discover/discover_widgets.dart';
 
+enum _DismissDirection { left, right, down }
+
 class DiscoverTimelineScreen extends StatefulWidget {
   const DiscoverTimelineScreen({super.key});
 
@@ -24,6 +26,7 @@ class _DiscoverTimelineScreenState extends State<DiscoverTimelineScreen>
   late AnimationController _swapController;
   late Animation<double> _swapAnimation;
   bool _isAnimating = false;
+  _DismissDirection _dismissDirection = _DismissDirection.down;
 
   String? _partnerUid;
 
@@ -33,11 +36,11 @@ class _DiscoverTimelineScreenState extends State<DiscoverTimelineScreen>
     _loadPartner();
     _swapController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 380),
+      duration: const Duration(milliseconds: 420),
     );
     _swapAnimation = CurvedAnimation(
       parent: _swapController,
-      curve: Curves.easeInOutCubic,
+      curve: Curves.easeInCubic,
     );
   }
 
@@ -63,22 +66,27 @@ class _DiscoverTimelineScreenState extends State<DiscoverTimelineScreen>
     return list[_topIndex % list.length];
   }
 
-  Future<void> _cycleCard() async {
-    final list = _discover;
-    if (list.length <= 1 || _isAnimating) return;
-    setState(() => _isAnimating = true);
-    await _swapController.forward();
-    if (!mounted) return;
-    setState(() {
-      _topIndex = (_topIndex + 1) % list.length;
-      _isAnimating = false;
-    });
-    _swapController.reset();
+  Offset _dismissOffsetFor(double progress) {
+    final size = MediaQuery.sizeOf(context);
+    switch (_dismissDirection) {
+      case _DismissDirection.left:
+        return Offset(-size.width * 1.15 * progress, -20 * progress);
+      case _DismissDirection.right:
+        return Offset(size.width * 1.15 * progress, -20 * progress);
+      case _DismissDirection.down:
+        return Offset(0, size.height * 0.75 * progress);
+    }
   }
 
-  Future<void> _dismissWithAction(Future<void> Function() action) async {
+  Future<void> _dismissWithAction(
+    _DismissDirection direction,
+    Future<void> Function() action,
+  ) async {
     if (_isAnimating || _topMemory == null) return;
-    setState(() => _isAnimating = true);
+    setState(() {
+      _isAnimating = true;
+      _dismissDirection = direction;
+    });
     await _swapController.forward();
     await action();
     if (!mounted) return;
@@ -89,12 +97,19 @@ class _DiscoverTimelineScreenState extends State<DiscoverTimelineScreen>
     _swapController.reset();
   }
 
+  void _openPreview() {
+    final memory = _topMemory;
+    if (memory == null || _isAnimating) return;
+    NavigationHelper.toDiscoverPreview(memory);
+  }
+
   Future<void> _onAddNote() async {
     final memory = _topMemory;
     if (memory == null) return;
     final text = await showQuickNoteDialog(context);
     if (text == null) return;
     await _dismissWithAction(
+      _DismissDirection.left,
       () => _memoryController.addDiscoverComment(memory.id, text),
     );
   }
@@ -103,6 +118,7 @@ class _DiscoverTimelineScreenState extends State<DiscoverTimelineScreen>
     final memory = _topMemory;
     if (memory == null) return;
     await _dismissWithAction(
+      _DismissDirection.down,
       () => _memoryController.likeDiscoverMemory(memory.id),
     );
   }
@@ -111,7 +127,21 @@ class _DiscoverTimelineScreenState extends State<DiscoverTimelineScreen>
     final memory = _topMemory;
     if (memory == null) return;
     await _dismissWithAction(
+      _DismissDirection.right,
       () => _memoryController.starDiscoverMemory(memory.id),
+    );
+  }
+
+  Future<void> _onReplay() async {
+    final count = await _memoryController.replayDiscoverMemories();
+    if (!mounted) return;
+    setState(() => _topIndex = 0);
+    Get.snackbar(
+      count == 0 ? 'Nothing to replay' : 'Replay started',
+      count == 0
+          ? 'No dismissed memory cards yet.'
+          : 'Showing $count memory card${count == 1 ? '' : 's'} again.',
+      snackPosition: SnackPosition.BOTTOM,
     );
   }
 
@@ -120,52 +150,52 @@ class _DiscoverTimelineScreenState extends State<DiscoverTimelineScreen>
     return Obx(() {
       final discover = _discover;
       final loading = _memoryController.isLoading.value;
-      final top = _topMemory;
 
       if (loading && discover.isEmpty) {
         return const Center(child: CircularProgressIndicator());
       }
 
       return Column(
-          children: [
-            DiscoverHeader(
-              currentMemory: top,
-              onExpand: top == null
-                  ? null
-                  : () => NavigationHelper.toDiscoverPreview(top),
-            ),
-            Expanded(
-              child: discover.isEmpty
-                  ? _EmptyDiscover()
-                  : AnimatedBuilder(
-                      animation: _swapAnimation,
-                      builder: (context, child) {
-                        return Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            DiscoverCardStack(
-                              memories: discover,
-                              topIndex: _topIndex,
-                              dismissOffset: -28 * _swapAnimation.value,
-                              onTopCardTap: _cycleCard,
-                            ),
+        children: [
+          DiscoverHeader(onReplay: _onReplay),
+          Expanded(
+            child: discover.isEmpty
+                ? _EmptyDiscover(onReplay: _onReplay)
+                : AnimatedBuilder(
+                    animation: _swapAnimation,
+                    builder: (context, child) {
+                      final progress = _swapAnimation.value;
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          DiscoverCardStack(
+                            memories: discover,
+                            topIndex: _topIndex,
+                            dismissOffset: _dismissOffsetFor(progress),
+                            dismissProgress: progress,
+                            onTopCardTap: _openPreview,
+                          ),
                           DiscoverActionButtons(
                             onAddNote: _onAddNote,
-                              onLike: _onLike,
-                              onStar: _onStar,
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-            ),
-          ],
+                            onLike: _onLike,
+                            onStar: _onStar,
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+          ),
+        ],
       );
     });
   }
 }
 
 class _EmptyDiscover extends StatelessWidget {
+  final VoidCallback onReplay;
+
+  const _EmptyDiscover({required this.onReplay});
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -195,6 +225,20 @@ class _EmptyDiscover extends StatelessWidget {
               style: AppTheme.getBodyStyle(
                 fontSize: AppTheme.fontSizeMedium.sp,
                 color: AppTheme.textPrimary.withValues(alpha: 0.7),
+              ),
+            ),
+            SizedBox(height: 3.h),
+            OutlinedButton.icon(
+              onPressed: onReplay,
+              icon: const Icon(Icons.replay_rounded),
+              label: const Text('Replay memories'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppTheme.secondaryColor,
+                side: BorderSide(color: AppTheme.secondaryColor),
+                padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.4.h),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppTheme.radiusLarge),
+                ),
               ),
             ),
           ],
