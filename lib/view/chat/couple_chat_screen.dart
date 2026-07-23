@@ -17,6 +17,7 @@ import 'package:yaaram/utils/media_utils.dart';
 import 'package:yaaram/utils/navigation_helper.dart';
 import 'package:yaaram/view/chat/partner_profile_preview_screen.dart';
 import 'package:yaaram/view/widgets/app_screen_shell.dart';
+import 'package:yaaram/view/widgets/themed_icon_menu_button.dart';
 
 class CoupleChatScreen extends StatefulWidget {
   const CoupleChatScreen({super.key});
@@ -180,52 +181,59 @@ class _CoupleChatScreenState extends State<CoupleChatScreen> {
 
       final bgPath = _chat.backgroundPath.value;
       final partner = _chat.partnerProfile.value;
+      final hasBgImage =
+          bgPath != null && File(bgPath).existsSync();
 
-      return Column(
+      return Stack(
+        fit: StackFit.expand,
         children: [
-          _ChatHeader(
-            partner: partner,
-            displayName: _chat.partnerDisplayName,
-            onAvatarTap: _openPartnerProfile,
-            onMenuAction: _onMenuAction,
-          ),
-          Expanded(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                if (bgPath != null && File(bgPath).existsSync())
-                  Positioned.fill(
-                    child: Image.file(
-                      File(bgPath),
-                      fit: BoxFit.cover,
-                    ),
-                  )
-                else
-                  const SizedBox.shrink(),
-                if (bgPath != null)
-                  Positioned.fill(
-                    child: ColoredBox(
-                      color: AppTheme.surfaceColor.withValues(alpha: 0.72),
+          Positioned.fill(
+            child: hasBgImage
+                ? Image.file(File(bgPath!), fit: BoxFit.cover)
+                : DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: AppTheme.backgroundGradient,
                     ),
                   ),
-                Obx(() {
+          ),
+          if (hasBgImage)
+            Positioned.fill(
+              child: ColoredBox(
+                color: AppTheme.surfaceColor.withValues(alpha: 0.72),
+              ),
+            ),
+          Column(
+            children: [
+              _ChatHeader(
+                partner: partner,
+                displayName: _chat.partnerDisplayName,
+                onAvatarTap: _openPartnerProfile,
+                onMenuAction: _onMenuAction,
+              ),
+              Expanded(
+                child: Obx(() {
                   final stream = _chat.messagesStream;
                   if (stream == null) {
                     return const SizedBox.shrink();
                   }
-                  // Rebuild when optimistic pending messages change.
                   final _ = _chat.pendingMessages.length;
                   return StreamBuilder<List<ChatMessage>>(
                     stream: stream,
                     builder: (context, snapshot) {
-                      final fromStream = snapshot.data ?? const <ChatMessage>[];
+                      final fromStream =
+                          snapshot.data ?? const <ChatMessage>[];
                       if (fromStream.isNotEmpty) {
-                        _chat.prunePendingAgainst(fromStream);
+                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                          _chat.prunePendingAgainst(fromStream);
+                        });
                       }
                       final messages = _chat.mergeMessages(fromStream);
-                      if (snapshot.connectionState == ConnectionState.waiting &&
+                      if (snapshot.connectionState ==
+                              ConnectionState.waiting &&
                           messages.isEmpty) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const Center(
+                          child: CircularProgressIndicator(),
+                        );
                       }
                       return _MessageList(
                         messages: messages,
@@ -236,13 +244,13 @@ class _CoupleChatScreenState extends State<CoupleChatScreen> {
                     },
                   );
                 }),
-              ],
-            ),
-          ),
-          _ChatComposer(
-            controller: _textController,
-            isSending: _chat.isSending.value,
-            onSend: _send,
+              ),
+              _ChatComposer(
+                controller: _textController,
+                isSending: _chat.isSending.value,
+                onSend: _send,
+              ),
+            ],
           ),
         ],
       );
@@ -315,31 +323,14 @@ class _ChatHeader extends StatelessWidget {
               ),
             ),
           ),
-          PopupMenuButton<String>(
-            icon: Icon(
-              Icons.more_vert,
-              color: AppTheme.textSecondary,
-              size: 6.w,
-            ),
-            color: AppTheme.surfaceColor,
+          ThemedIconMenuButton<String>(
+            triggerIcon: Icons.more_horiz,
             onSelected: onMenuAction,
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'nickname',
-                child: Text('Set nickname', style: AppTheme.getBodyStyle()),
-              ),
-              PopupMenuItem(
-                value: 'bg',
-                child: Text('Chat background', style: AppTheme.getBodyStyle()),
-              ),
-              PopupMenuItem(
-                value: 'clear_bg',
-                child: Text('Clear background', style: AppTheme.getBodyStyle()),
-              ),
-              PopupMenuItem(
-                value: 'profile',
-                child: Text('Partner profile', style: AppTheme.getBodyStyle()),
-              ),
+            items: const [
+              IconMenuItem(value: 'nickname', icon: Icons.badge),
+              IconMenuItem(value: 'bg', icon: Icons.wallpaper),
+              IconMenuItem(value: 'clear_bg', icon: Icons.hide_image),
+              IconMenuItem(value: 'profile', icon: Icons.person),
             ],
           ),
         ],
@@ -548,16 +539,8 @@ class _ChatComposer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return Padding(
       padding: EdgeInsets.fromLTRB(4.w, 1.h, 4.w, 1.5.h),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceColor.withValues(alpha: 0.95),
-        border: Border(
-          top: BorderSide(
-            color: AppTheme.secondaryColor.withValues(alpha: 0.12),
-          ),
-        ),
-      ),
       child: Row(
         children: [
           Expanded(
@@ -572,7 +555,7 @@ class _ChatComposer extends StatelessWidget {
                   color: AppTheme.textSecondary.withValues(alpha: 0.5),
                 ),
                 filled: true,
-                fillColor: AppTheme.surfaceColor,
+                fillColor: AppTheme.surfaceColor.withValues(alpha: 0.92),
                 contentPadding: EdgeInsets.symmetric(
                   horizontal: 4.w,
                   vertical: 1.4.h,
