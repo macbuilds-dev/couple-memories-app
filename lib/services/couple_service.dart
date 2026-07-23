@@ -116,6 +116,13 @@ class CoupleService {
     });
   }
 
+  /// Live couple membership (detects when partner joins without refreshing).
+  Stream<List<String>> watchMemberIds(String coupleId) {
+    return _couples.doc(coupleId).snapshots().map((snap) {
+      return List<String>.from(snap.data()?['memberIds'] ?? const []);
+    });
+  }
+
   String _generateCode() {
     const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
     final rand = Random();

@@ -37,6 +37,13 @@ class UserProfileService {
   Future<UserProfile> getPartnerProfile(String partnerUid) =>
       getUserProfile(partnerUid, repairCompletion: false);
 
+  /// Live partner profile (nickname, photo, name) without polling.
+  Stream<UserProfile> watchPartnerProfile(String partnerUid) {
+    return _users.doc(partnerUid).snapshots().map((snap) {
+      return UserProfile.fromFirestore(partnerUid, snap.data() ?? {});
+    });
+  }
+
   Future<void> saveProfile(UserProfile profile) async {
     var toSave = profile;
     if (!profile.profileCompleted && profile.isDataComplete) {

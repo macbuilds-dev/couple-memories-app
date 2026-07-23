@@ -3,16 +3,19 @@ import 'dart:async';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:yaaram/controller/auth_controller.dart';
+import 'package:yaaram/controller/live_sync_controller.dart';
 import 'package:yaaram/model/chat_message_model.dart';
 import 'package:yaaram/model/user_profile_model.dart';
 import 'package:yaaram/services/chat_preferences_service.dart';
 import 'package:yaaram/services/couple_chat_service.dart';
+import 'package:yaaram/services/couple_service.dart';
 import 'package:yaaram/services/user_profile_service.dart';
 
 class CoupleChatController extends GetxController {
   final CoupleChatService _chat = CoupleChatService.instance;
   final UserProfileService _profiles = UserProfileService.instance;
   final ChatPreferencesService _prefs = ChatPreferencesService.instance;
+  final CoupleService _couples = CoupleService.instance;
 
   final Rxn<UserProfile> partnerProfile = Rxn<UserProfile>();
   final RxnString partnerUid = RxnString();
@@ -27,6 +30,9 @@ class CoupleChatController extends GetxController {
 
   Stream<List<ChatMessage>>? _messagesStream;
   String? _streamCoupleId;
+  StreamSubscription<List<String>>? _membersSub;
+  StreamSubscription<UserProfile>? _partnerProfileSub;
+  String? _watchingCoupleId;
 
   AuthController get _auth => Get.find<AuthController>();
 
@@ -69,9 +75,18 @@ class CoupleChatController extends GetxController {
     _streamCoupleId = null;
   }
 
+  Future<void> _cancelLiveWatches() async {
+    await _membersSub?.cancel();
+    await _partnerProfileSub?.cancel();
+    _membersSub = null;
+    _partnerProfileSub = null;
+    _watchingCoupleId = null;
+  }
+
   Future<void> _bootstrap() async {
     final uid = myUid;
     if (uid == null) {
+      await _cancelLiveWatches();
       isLoadingPartner.value = false;
       partnerProfile.value = null;
       partnerUid.value = null;
@@ -80,31 +95,83 @@ class CoupleChatController extends GetxController {
       return;
     }
 
-    isLoadingPartner.value = true;
-    try {
-      final pUid = hasCouple ? await _profiles.getPartnerUid(uid) : null;
-      partnerUid.value = pUid;
+    final cid = coupleId;
+    if (!hasCouple || cid == null) {
+      await _cancelLiveWatches();
+      isLoadingPartner.value = false;
       partnerProfile.value = null;
+      partnerUid.value = null;
       pendingMessages.clear();
       _resetStream();
-
-      if (pUid != null) {
-        try {
-          partnerProfile.value = await _profiles.getPartnerProfile(pUid);
-        } catch (e) {
-          partnerProfile.value = null;
-          print('Could not load partner profile: $e');
-        }
-        backgroundPath.value = await _prefs.getBackgroundPath(uid);
-        // Prime stream cache for StreamBuilder.
-        messagesStream;
-      }
-    } finally {
-      isLoadingPartner.value = false;
+      return;
     }
+
+    if (_watchingCoupleId == cid && _membersSub != null) {
+      return;
+    }
+
+    isLoadingPartner.value = true;
+    await _cancelLiveWatches();
+    partnerProfile.value = null;
+    partnerUid.value = null;
+    pendingMessages.clear();
+    _resetStream();
+    _watchingCoupleId = cid;
+
+    backgroundPath.value = await _prefs.getBackgroundPath(uid);
+
+    _membersSub = _couples.watchMemberIds(cid).listen((members) {
+      String? pUid;
+      for (final id in members) {
+        if (id != uid) {
+          pUid = id;
+          break;
+        }
+      }
+      _onPartnerUidChanged(pUid);
+    });
   }
 
-  Future<void> reload() => _bootstrap();
+  void _onPartnerUidChanged(String? pUid) {
+    if (partnerUid.value == pUid && _partnerProfileSub != null) {
+      isLoadingPartner.value = false;
+      return;
+    }
+
+    partnerUid.value = pUid;
+    _partnerProfileSub?.cancel();
+    _partnerProfileSub = null;
+    partnerProfile.value = null;
+    _resetStream();
+
+    if (pUid == null) {
+      isLoadingPartner.value = false;
+      return;
+    }
+
+    _partnerProfileSub = _profiles.watchPartnerProfile(pUid).listen(
+      (profile) {
+        partnerProfile.value = profile;
+        isLoadingPartner.value = false;
+      },
+      onError: (e) {
+        print('Could not watch partner profile: $e');
+        isLoadingPartner.value = false;
+      },
+    );
+    messagesStream;
+  }
+
+  Future<void> reload() async {
+    await _cancelLiveWatches();
+    await _bootstrap();
+  }
+
+  @override
+  void onClose() {
+    _cancelLiveWatches();
+    super.onClose();
+  }
 
   List<ChatMessage> mergeMessages(List<ChatMessage> fromStream) {
     final ids = fromStream.map((m) => m.id).toSet();
@@ -143,6 +210,9 @@ class CoupleChatController extends GetxController {
         text: trimmed,
         messageId: id,
       );
+      try {
+        await Get.find<LiveSyncController>().notifyPartnerOfMessage(trimmed);
+      } catch (_) {}
     } catch (e) {
       pendingMessages.removeWhere((m) => m.id == id);
       rethrow;
@@ -152,7 +222,9 @@ class CoupleChatController extends GetxController {
   }
 
   void prunePendingAgainst(List<ChatMessage> fromStream) {
+    if (pendingMessages.isEmpty) return;
     final ids = fromStream.map((m) => m.id).toSet();
+    if (!pendingMessages.any((m) => ids.contains(m.id))) return;
     pendingMessages.removeWhere((m) => ids.contains(m.id));
   }
 

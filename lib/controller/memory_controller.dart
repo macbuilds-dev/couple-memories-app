@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:yaaram/controller/auth_controller.dart';
+import 'package:yaaram/controller/live_sync_controller.dart';
 import 'package:yaaram/controller/utils/database/database_service.dart';
 import 'package:yaaram/model/memory_model/memory_comment_model.dart';
 import 'package:yaaram/model/memory_model/memory_model.dart';
@@ -174,6 +175,10 @@ class MemoryController extends GetxController {
       Get.snackbar('Success', 'Memory saved to our love story',
           snackPosition: SnackPosition.BOTTOM,
           duration: const Duration(seconds: 2));
+      try {
+        await Get.find<LiveSyncController>()
+            .notifyPartnerOfMemory(saved.title);
+      } catch (_) {}
       return saved;
     } catch (e) {
       print('Error adding memory: $e');
@@ -281,15 +286,13 @@ class MemoryController extends GetxController {
   List<Memory> discoverMemoriesFor(String uid, {String? partnerUid}) {
     return memories.where((m) {
       if (m.isDeleted) return false;
-      final author = m.createdBy;
-      if (author != null &&
-          author.isNotEmpty &&
-          author != uid &&
-          !m.viewedBy.contains(uid)) {
-        return true;
-      }
       if (m.hasUnseenNotesFrom(uid, partnerUid)) return true;
-      return false;
+
+      // Partner-authored cards, or shared defaults (no createdBy).
+      final author = m.createdBy;
+      final isOwn = author != null && author.isNotEmpty && author == uid;
+      if (isOwn) return false;
+      return !m.viewedBy.contains(uid);
     }).toList()
       ..sort((a, b) => b.date.compareTo(a.date));
   }
@@ -313,6 +316,12 @@ class MemoryController extends GetxController {
         } else {
           list = [];
         }
+      case MomentsFilter.saved:
+        list = list
+            .where((m) => m.isFavorite || m.isStarredBy(uid))
+            .toList();
+      case MomentsFilter.noted:
+        list = list.where((m) => m.comments.isNotEmpty).toList();
       case MomentsFilter.all:
         break;
     }
@@ -343,6 +352,43 @@ class MemoryController extends GetxController {
       memories[index] = updated;
       await _db.updateMemory(updated);
     }
+  }
+
+  /// Puts dismissed discover cards back into the stack for this user.
+  Future<int> replayDiscoverMemories() async {
+    final uid = _auth.uid;
+    if (uid == null) return 0;
+
+    final toReplay = memories
+        .where((m) => !m.isDeleted && m.viewedBy.contains(uid))
+        .toList(growable: false);
+    if (toReplay.isEmpty) return 0;
+
+    if (_useCloud && await _isOnline()) {
+      await _firestore.clearViewedByForUser(
+        _auth.coupleId!,
+        uid,
+        toReplay.map((m) => m.id),
+      );
+      // Optimistic local update until stream catches up.
+      for (final memory in toReplay) {
+        final index = memories.indexWhere((m) => m.id == memory.id);
+        if (index == -1) continue;
+        memories[index] = memory.copyWith(
+          viewedBy: memory.viewedBy.where((id) => id != uid).toList(),
+        );
+      }
+      memories.refresh();
+    } else {
+      for (final memory in toReplay) {
+        final updated = memory.copyWith(
+          viewedBy: memory.viewedBy.where((id) => id != uid).toList(),
+        );
+        await _db.updateMemory(updated);
+      }
+      await loadMemories();
+    }
+    return toReplay.length;
   }
 
   Future<void> toggleLikeMemory(int id) async {
@@ -497,6 +543,7 @@ class MemoryController extends GetxController {
             'The day everything changed. Coffee turned into hours of conversation, and I knew you were special.',
         location: 'Café Moments',
         isFavorite: true,
+        isTogetherMoment: true,
         mediaFiles: [],
       ),
       Memory(
@@ -507,6 +554,7 @@ class MemoryController extends GetxController {
             'You looked stunning in that red dress. The way you smiled when I gave you those roses... unforgettable.',
         location: 'Riverside Restaurant',
         isFavorite: false,
+        isTogetherMoment: true,
         mediaFiles: [],
       ),
       Memory(
@@ -517,6 +565,7 @@ class MemoryController extends GetxController {
             'Walking hand in hand, the waves at our feet. You laughed so freely, and my heart was completely yours.',
         location: 'Paradise Beach',
         isFavorite: true,
+        isTogetherMoment: true,
         mediaFiles: [],
       ),
       Memory(
@@ -527,6 +576,7 @@ class MemoryController extends GetxController {
             'We didn\'t even finish the movie. Just being close to you was all the entertainment I needed.',
         location: 'Home Sweet Home',
         isFavorite: false,
+        isTogetherMoment: true,
         mediaFiles: [],
       ),
     ];
@@ -540,7 +590,14 @@ class MemoryController extends GetxController {
         await _db.createMemory(Memory.fromJson(json));
       }
     }
-    if (!_useCloud) await loadMemories();
+    if (!_useCloud) {
+      await loadMemories();
+    } else {
+      // Stream may already be empty; push defaults into UI immediately.
+      memories.value = [...memories, ...defaultMemories]
+        ..sort((a, b) => b.date.compareTo(a.date));
+      memories.refresh();
+    }
   }
 
   @override
