@@ -1,0 +1,15 @@
+---
+description: Commit/push session limits and PR-oriented workflow
+alwaysApply: true
+---
+
+# Commit and push
+
+When the user asks to commit and/or push:
+
+1. Max **29** commits this session. Split real work into small logical commits.
+2. No empty or junk commits. Do not change git config.
+3. Prefer feature branch + PR (`gh pr create`) when it helps review or Pull Shark.
+4. Use `Co-authored-by` only if the project documents a real second GitHub identity.
+5. Author email should remain the repo’s configured identity (contribution email on GitHub).
+6. Never force-push main/master unless the user explicitly asks.

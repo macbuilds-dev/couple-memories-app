@@ -1,0 +1,12 @@
+---
+description: Read and update docs/ai memory for this project
+alwaysApply: true
+---
+
+# Memory workflow
+
+- Before non-trivial tasks, read `docs/ai/active.md` and `AGENTS.md`.
+- After meaningful work, update `docs/ai/active.md` and `docs/ai/progress.md` (and `decisions.md` / `lessons.md` when relevant).
+- Keep memory files short and factual.
+- Before committing memory changes, show the user the diff (recommended default).
+- Do not invent product requirements that are not in `docs/ai/` or the user’s message.
