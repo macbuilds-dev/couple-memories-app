@@ -65,11 +65,13 @@ class DefaultFirebaseOptions {
     storageBucket: 'yaaram-80842.firebasestorage.app',
   );
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'REPLACE_ME',
-    appId: 'REPLACE_ME',
-    messagingSenderId: 'REPLACE_ME',
-    projectId: 'yaaram',
-    storageBucket: 'yaaram.firebasestorage.app',
+    apiKey: 'AIzaSyDE1mvR3EKVP_yt9He-y3EeS8ljrcR9Blg',
+    appId: '1:83467342479:ios:8f095a7cd1095b0dc016fa',
+    messagingSenderId: '83467342479',
+    projectId: 'yaaram-80842',
+    storageBucket: 'yaaram-80842.firebasestorage.app',
+    androidClientId: '83467342479-mifaflf0jntf2ssb6qqrkdd61ant91m2.apps.googleusercontent.com',
+    iosClientId: '83467342479-53578jl8ojiu80g685v4fn8g8d43fe4o.apps.googleusercontent.com',
     iosBundleId: 'com.yaaram.lovestory',
   );
 }

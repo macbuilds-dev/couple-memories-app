@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "83467342479-mifaflf0jntf2ssb6qqrkdd61ant91m2.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.yaaram.lovestory",
+            "certificate_hash": "45e668b02d58b04ffe66c2c2eade8bde0ffe1d70"
+          }
+        },
+        {
           "client_id": "83467342479-6mj8jnkep30luf77f6dcnjs2fr7nrqc0.apps.googleusercontent.com",
           "client_type": 3
         }
