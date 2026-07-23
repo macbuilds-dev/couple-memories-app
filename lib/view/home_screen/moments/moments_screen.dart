@@ -11,6 +11,7 @@ import 'package:yaaram/utils/navigation_helper.dart';
 import 'package:yaaram/view/home_screen/discover/discover_widgets.dart';
 import 'package:yaaram/view/home_screen/moments/moment_card_widget.dart';
 import 'package:yaaram/view/widgets/delete_memory_dialog.dart';
+import 'package:yaaram/view/widgets/themed_icon_menu_button.dart';
 
 class MomentsScreen extends StatefulWidget {
   const MomentsScreen({super.key});
@@ -250,22 +251,12 @@ class _FilterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(AppTheme.radiusSmall),
-      child: PopupMenuButton<MomentsFilter>(
-        initialValue: filter,
-        icon: Icon(Icons.tune, color: AppTheme.secondaryColor, size: 6.w),
-        onSelected: onChanged,
-        itemBuilder: (context) => MomentsFilter.values
-            .map(
-              (f) => PopupMenuItem(
-                value: f,
-                child: Text(f.label),
-              ),
-            )
-            .toList(),
-      ),
+    return ThemedIconMenuButton<MomentsFilter>(
+      value: filter,
+      onSelected: onChanged,
+      items: MomentsFilter.values
+          .map((f) => IconMenuItem(value: f, icon: f.icon))
+          .toList(),
     );
   }
 }

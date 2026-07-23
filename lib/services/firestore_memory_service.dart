@@ -49,6 +49,28 @@ class FirestoreMemoryService {
     await _memoriesRef(coupleId).doc(id.toString()).update(patch);
   }
 
+  /// Clears [uid] from `viewedBy` on the given memory ids (batched).
+  Future<void> clearViewedByForUser(
+    String coupleId,
+    String uid,
+    Iterable<int> memoryIds,
+  ) async {
+    final ids = memoryIds.toList();
+    for (var i = 0; i < ids.length; i += 450) {
+      final chunk = ids.sublist(i, i + 450 > ids.length ? ids.length : i + 450);
+      final batch = _firestore.batch();
+      for (final id in chunk) {
+        batch.update(
+          _memoriesRef(coupleId).doc(id.toString()),
+          {
+            'viewedBy': FieldValue.arrayRemove([uid]),
+          },
+        );
+      }
+      await batch.commit();
+    }
+  }
+
   Future<void> updateMemory(String coupleId, Memory memory) async {
     await _memoriesRef(coupleId)
         .doc(memory.id.toString())
